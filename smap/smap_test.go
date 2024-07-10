@@ -79,37 +79,40 @@ func BenchmarkSyncMap_Store(b *testing.B) {
 	wg.Wait()
 }
 
-func BenchmarkConcurrentStringMap_Load(b *testing.B) {
-	m := NewStringMap(100)
+var (
+	storedConcurrentStringMap = NewStringMap(100)
+	storedSyncMap             = sync.Map{}
+)
+
+func init() {
 	for i := 0; i < 123456; i++ {
 		k := conv.Itoa(i)
-		m.Store(k, i)
+		storedConcurrentStringMap.Store(k, i)
+		storedSyncMap.Store(k, i)
 	}
+}
+
+func BenchmarkConcurrentStringMap_Load(b *testing.B) {
 	wg := sync.WaitGroup{}
 	for n := 0; n < b.N; n++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
 			k := conv.Itoa(i)
-			m.Load(k)
+			storedConcurrentStringMap.Load(k)
 		}(n)
 	}
 	wg.Wait()
 }
 
 func BenchmarkSyncMap_Load(b *testing.B) {
-	m := sync.Map{}
-	for i := 0; i < 123456; i++ {
-		k := conv.Itoa(i)
-		m.Store(k, i)
-	}
 	wg := sync.WaitGroup{}
 	for n := 0; n < b.N; n++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
 			k := conv.Itoa(i)
-			m.Load(k)
+			storedSyncMap.Load(k)
 		}(n)
 	}
 	wg.Wait()
